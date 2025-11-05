@@ -16,7 +16,8 @@ connectDB();
 const allowed = [
   'http://localhost:4200',
   // Add your Render frontend URL and custom domain here
-  'https://kubereshwar-frontend.onrender.com',
+  'https://kubereshwarfrontend.onrender.com',  // Frontend URL (no hyphen)
+  'http://kubereshwar-frontend.onrender.com',  // Alternative if different
   // 'https://yourdomain.com',
   // 'https://www.yourdomain.com',
 ];
