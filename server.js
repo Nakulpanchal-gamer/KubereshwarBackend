@@ -15,7 +15,8 @@ connectDB();
 // Allowed origins - add your production domains here
 const allowed = [
   'http://localhost:4200',
-  // Add your Hostinger domain(s) here after deployment
+  // Add your Render frontend URL and custom domain here
+  'https://kubereshwar-frontend.onrender.com',
   // 'https://yourdomain.com',
   // 'https://www.yourdomain.com',
 ];
@@ -54,3 +55,4 @@ app.use("/api/uploads", uploadRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
