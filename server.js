@@ -18,8 +18,10 @@ const allowed = [
   // Add your Render frontend URL and custom domain here
   'https://kubereshwarfrontend.onrender.com',  // Frontend URL (no hyphen)
   'http://kubereshwar-frontend.onrender.com',  // Alternative if different
-  // 'https://yourdomain.com',
-  // 'https://www.yourdomain.com',
+  'https://kubereshwarpress.com',  // Production domain
+  'https://www.kubereshwarpress.com',  // Production domain with www
+  'http://kubereshwarpress.com',  // HTTP version (if needed)
+  'http://www.kubereshwarpress.com',  // HTTP version with www (if needed)
 ];
 
 // Allow production domains from environment variable
