@@ -65,7 +65,10 @@ exports.requestAdminOtp = async (req, res) => {
     </div>
   `;
 
-  try { await sendSystemEmail({ to: toAddress, subject, text, html }); } catch (_) {}
+  // send email asynchronously so the API responds instantly even if SMTP is slow
+  sendSystemEmail({ to: toAddress, subject, text, html })
+    .catch(err => console.error("OTP email failed:", err?.message || err));
+
   return res.status(200).json(generic);
 };
 
