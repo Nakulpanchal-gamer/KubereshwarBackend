@@ -30,13 +30,17 @@ const sha256 = s => crypto.createHash("sha256").update(s).digest("hex");
 // STEP 1: request OTP
 exports.requestAdminOtp = async (req, res) => {
   const username = (ADMIN_USERNAME || "").toLowerCase().trim();
+  console.log("[OTP] request received", { username: ADMIN_USERNAME ? "***" : "(missing)" });
   const generic = { message: "If the account exists, an OTP has been sent." };
   if (!username) return res.status(200).json(generic);
 
   // ✅ find the admin FIRST (you were missing this line)
   const admin = await AdminUser.findOne({ username });
   // Always return generic to avoid enumeration
-  if (!admin) return res.status(200).json(generic);
+  if (!admin) {
+    console.warn("[OTP] admin not found for username env; check ADMIN_USERNAME and DB record");
+    return res.status(200).json(generic);
+  }
 
   // throttle
   const now = new Date();
@@ -53,6 +57,7 @@ exports.requestAdminOtp = async (req, res) => {
 
   // ✅ fixed recipient (ADMIN_EMAIL preferred; fallback to ADMIN_USERNAME)
   const toAddress = (ADMIN_EMAIL || ADMIN_USERNAME || username).trim();
+  console.log("[OTP] prepared OTP for admin; attempting to send email", { to: toAddress ? "***" : "(missing)" });
 
   const subject = "Your Admin Login OTP";
   const text = `Your OTP is: ${otp}\nIt expires in ${OTP_TTL_MIN_N} minutes.\nIf you did not request this, ignore this email.`;
@@ -67,7 +72,8 @@ exports.requestAdminOtp = async (req, res) => {
 
   // send email asynchronously so the API responds instantly even if SMTP is slow
   sendSystemEmail({ to: toAddress, subject, text, html })
-    .catch(err => console.error("OTP email failed:", err?.message || err));
+    .then(() => console.log("[OTP] email dispatch success"))
+    .catch(err => console.error("[OTP] email failed:", err?.message || err));
 
   return res.status(200).json(generic);
 };
