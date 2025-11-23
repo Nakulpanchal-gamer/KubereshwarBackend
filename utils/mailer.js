@@ -3,6 +3,7 @@ const nodemailer = require('nodemailer');
 
 const enableDebug = process.env.SMTP_DEBUG === 'true';
 
+// Initialize SMTP transporter
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT || 587),
@@ -122,25 +123,57 @@ ${escapeHtml(message || '')}
     message || ''
   ].join('\n');
 
-  return transporter.sendMail({
-    from: `"${process.env.MAIL_FROM_NAME || 'Kubereshwar Website'}" <${process.env.MAIL_FROM || process.env.SMTP_USER}>`,
-    to,
-    replyTo: fromEmail,
-    subject,
-    text,
-    html,
-    attachments,
-  });
+  const fromEmailAddress = process.env.MAIL_FROM || process.env.SMTP_USER;
+  const fromNameDisplay = process.env.MAIL_FROM_NAME || 'Kubereshwar Website';
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"${fromNameDisplay}" <${fromEmailAddress}>`,
+      to,
+      replyTo: fromEmail,
+      subject,
+      text,
+      html,
+      attachments,
+    });
+
+    if (enableDebug) {
+      console.log('[Email] Sent successfully:', info.messageId);
+    }
+
+    return { messageId: info.messageId, success: true };
+  } catch (err) {
+    if (enableDebug) {
+      console.error('[Email] Send failed:', err.message);
+    }
+    throw err;
+  }
 }
 
 async function sendSystemEmail({ to, subject, html, text }) {
-  return transporter.sendMail({
-    from: `"${process.env.MAIL_FROM_NAME || 'Kubereshwar Website'}" <${process.env.MAIL_FROM || process.env.SMTP_USER}>`,
-    to,
-    subject,
-    text,
-    html,
-  });
+  const fromEmailAddress = process.env.MAIL_FROM || process.env.SMTP_USER;
+  const fromNameDisplay = process.env.MAIL_FROM_NAME || 'Kubereshwar Website';
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"${fromNameDisplay}" <${fromEmailAddress}>`,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+      text,
+    });
+
+    if (enableDebug) {
+      console.log('[Email] System email sent successfully:', info.messageId);
+    }
+
+    return { messageId: info.messageId, success: true };
+  } catch (err) {
+    if (enableDebug) {
+      console.error('[Email] System email send failed:', err.message);
+    }
+    throw err;
+  }
 }
 
 /* ---------- helpers ---------- */
