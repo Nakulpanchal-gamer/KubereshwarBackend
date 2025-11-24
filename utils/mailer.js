@@ -1,29 +1,21 @@
 // src/utils/mailer.js
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const enableDebug = process.env.SMTP_DEBUG === 'true';
+const enableDebug = process.env.EMAIL_DEBUG === 'true';
 
-// Initialize SMTP transporter
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT || 587),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-  logger: enableDebug,
-  debug: enableDebug,
-});
+// Initialize Resend client
+const resendApiKey = process.env.RESEND_API_KEY;
+if (!resendApiKey) {
+  console.warn('[Email] WARNING: RESEND_API_KEY is not set. Email functionality will not work.');
+}
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 if (enableDebug) {
-  console.log('[SMTP] transport configured', {
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: process.env.SMTP_SECURE === 'true',
-    user: process.env.SMTP_USER ? '***' : '(missing)',
+  console.log('[Email] Resend configured', {
+    apiKey: process.env.RESEND_API_KEY ? '***' : '(missing)',
+    fromEmail: process.env.RESEND_FROM_EMAIL || process.env.MAIL_FROM,
+    fromName: process.env.MAIL_FROM_NAME || 'Kubereshwar Website',
   });
-
-  transporter.verify()
-    .then(() => console.log('[SMTP] verify success'))
-    .catch(err => console.error('[SMTP] verify failed', err?.message || err));
 }
 
 async function sendEnquiryEmail({
@@ -123,25 +115,39 @@ ${escapeHtml(message || '')}
     message || ''
   ].join('\n');
 
-  const fromEmailAddress = process.env.MAIL_FROM || process.env.SMTP_USER;
+  // Use onboarding@resend.dev for testing (pre-verified) or verified email from env
+  const fromEmailAddress = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
   const fromNameDisplay = process.env.MAIL_FROM_NAME || 'Kubereshwar Website';
 
+  if (!resend) {
+    throw new Error('Resend API key is not configured. Please set RESEND_API_KEY in your environment variables.');
+  }
+
   try {
-    const info = await transporter.sendMail({
-      from: `"${fromNameDisplay}" <${fromEmailAddress}>`,
-      to,
+    const { data, error } = await resend.emails.send({
+      from: `${fromNameDisplay} <${fromEmailAddress}>`,
+      to: [to],
       replyTo: fromEmail,
       subject,
-      text,
       html,
-      attachments,
+      text,
+      // Note: Resend attachments require different format
+      // attachments: attachments.length > 0 ? attachments.map(att => ({
+      //   filename: att.filename,
+      //   content: att.content,
+      //   contentType: att.contentType
+      // })) : undefined
     });
 
-    if (enableDebug) {
-      console.log('[Email] Sent successfully:', info.messageId);
+    if (error) {
+      throw new Error(`Resend API error: ${JSON.stringify(error)}`);
     }
 
-    return { messageId: info.messageId, success: true };
+    if (enableDebug) {
+      console.log('[Email] Sent successfully:', data?.id);
+    }
+
+    return { messageId: data?.id, success: true };
   } catch (err) {
     if (enableDebug) {
       console.error('[Email] Send failed:', err.message);
@@ -151,23 +157,32 @@ ${escapeHtml(message || '')}
 }
 
 async function sendSystemEmail({ to, subject, html, text }) {
-  const fromEmailAddress = process.env.MAIL_FROM || process.env.SMTP_USER;
+  // Use onboarding@resend.dev for testing (pre-verified) or verified email from env
+  const fromEmailAddress = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
   const fromNameDisplay = process.env.MAIL_FROM_NAME || 'Kubereshwar Website';
 
+  if (!resend) {
+    throw new Error('Resend API key is not configured. Please set RESEND_API_KEY in your environment variables.');
+  }
+
   try {
-    const info = await transporter.sendMail({
-      from: `"${fromNameDisplay}" <${fromEmailAddress}>`,
+    const { data, error } = await resend.emails.send({
+      from: `${fromNameDisplay} <${fromEmailAddress}>`,
       to: Array.isArray(to) ? to : [to],
       subject,
       html,
       text,
     });
 
-    if (enableDebug) {
-      console.log('[Email] System email sent successfully:', info.messageId);
+    if (error) {
+      throw new Error(`Resend API error: ${JSON.stringify(error)}`);
     }
 
-    return { messageId: info.messageId, success: true };
+    if (enableDebug) {
+      console.log('[Email] System email sent successfully:', data?.id);
+    }
+
+    return { messageId: data?.id, success: true };
   } catch (err) {
     if (enableDebug) {
       console.error('[Email] System email send failed:', err.message);

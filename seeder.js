@@ -2,7 +2,6 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
 const AdminUser = require('./models/AdminUser');
 
 const DB_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
@@ -28,18 +27,14 @@ const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 10);
         console.log(`🔁 Updated admin username → ${ADMIN_USERNAME}`);
       }
     } else {
-      // create a new admin (random password hash just to satisfy schema)
-      const randomPass = crypto.randomBytes(16).toString('hex');
-      const passwordHash = await bcrypt.hash(randomPass, BCRYPT_ROUNDS);
+      // create a new admin with default password
+      const defaultPassword = 'pass123';
+      const passwordHash = await bcrypt.hash(defaultPassword, BCRYPT_ROUNDS);
       const created = await AdminUser.create({
         username: ADMIN_USERNAME,
         passwordHash,
-        otpCodeHash: null,
-        otpExpiresAt: null,
-        otpAttemptCounter: 0,
-        otpSentAt: null,
       });
-      console.log(`✅ Created admin ${created.username} (${created._id})`);
+      console.log(`✅ Created admin ${created.username} (${created._id}) with default password`);
     }
 
     await mongoose.disconnect();

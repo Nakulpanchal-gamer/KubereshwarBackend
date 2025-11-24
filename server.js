@@ -7,7 +7,7 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const productRoutes = require("./routes/productRoutes");
 const enquiryRoutes = require("./routes/enquiryRoutes");
 const adminRoutes = require("./routes/adminRoutes");
-const uploadRoutes = require("./routes/uploadroutes");
+const uploadRoutes = require("./routes/uploadRoutes");
 
 const app = express();
 connectDB();

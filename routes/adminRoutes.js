@@ -1,9 +1,9 @@
-// routes/adminRoutes.js
 const express = require("express");
-const { requestAdminOtp, verifyAdminOtp, loginAdmin } = require("../controllers/adminController");
+const { loginAdmin, resetPassword } = require("../controllers/adminController");
+
 const router = express.Router();
 
-router.post("/otp/request", requestAdminOtp);
-router.post("/otp/verify",  verifyAdminOtp);
+router.post("/login", loginAdmin);
+router.post("/reset-password", resetPassword);
 
 module.exports = router;
