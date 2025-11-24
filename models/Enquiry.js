@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const EnquirySchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" }, // optional
   name:    { type: String, required: true, trim: true },
-  email:   { type: String, required: true, trim: true },
+  email:   { type: String, trim: true }, // optional - either email or phone required
   phone:   { type: String, trim: true, default: "" },
   message: { type: String, required: true, trim: true },
 

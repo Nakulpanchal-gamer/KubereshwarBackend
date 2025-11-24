@@ -29,16 +29,25 @@ exports.createEnquiry = async (req, res) => {
       productIds = rawProductIds.split(',').map(s => s.trim()).filter(Boolean);
     }
 
-    // basic input sanity
-    if (!name.trim() || !email.trim() || !message.trim()) {
-      return res.status(400).json({ message: 'Name, email, and message are required.' });
+    // basic input sanity - name and message are required, and at least one of email or phone
+    const nameTrimmed = name.trim();
+    const emailTrimmed = email.trim();
+    const phoneTrimmed = phone.trim();
+    const messageTrimmed = message.trim();
+    
+    if (!nameTrimmed || !messageTrimmed) {
+      return res.status(400).json({ message: 'Name and message are required.' });
+    }
+    
+    if (!emailTrimmed && !phoneTrimmed) {
+      return res.status(400).json({ message: 'Please provide either email or phone.' });
     }
 
     // persist enquiry (schema-safe: unknown fields are ignored if not in model)
     const enquiry = new Enquiry({
-      name: name.trim(),
-      email: email.trim(),
-      message: message.trim(),
+      name: nameTrimmed,
+      email: emailTrimmed || undefined, // Only set if provided
+      message: messageTrimmed,
       product: legacyProductId || undefined, // keep legacy compatibility
       phone: phone || undefined,
       topic: topic || undefined,
@@ -69,9 +78,11 @@ exports.createEnquiry = async (req, res) => {
     // Build & send email to admin
     let emailSent = false;
     try {
+      // Use email if provided, otherwise use a placeholder (phone-only enquiries)
+      const fromEmail = emailTrimmed || `noreply+phone@${process.env.ADMIN_EMAIL?.split('@')[1] || 'enquiry.local'}`;
       await sendEnquiryEmail({
         to: process.env.ADMIN_EMAIL,  // REQUIRED: set in env
-        fromEmail: enquiry.email,
+        fromEmail: fromEmail,
         fromName: enquiry.name,
         message: enquiry.message,
 
